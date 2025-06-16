@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Study Flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poiret+One&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000000;
+      font-family: 'Poiret One', cursive;
+      color: #e6f1ff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #fullscreen-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #e6f1ff;
+      color: #1b1b1b;
+      border: none;
+      padding: 8px 14px;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #fullscreen-btn:hover {
+      background-color: #d1e0f0;
+    }
+
+    #clock {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+      color: #a0c4ff;
+    }
+
+    #goal {
+      font-size: 2.3em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #fdfcdc;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    .progress-circle {
+      width: 240px;
+      height: 240px;
+      background: conic-gradient(#80ed99 0deg, #2d2d2d 0deg);
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 0 30px rgba(128, 237, 153, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .progress-circle::after {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+      background: #000000;
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .progress-circle span {
+      position: relative;
+      font-size: 1.8em;
+      color: #e0f7fa;
+      z-index: 2;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="fullscreen-btn">⛶ Full Screen</button>
+
+  <div id="clock">Loading IST...</div>
+  <div id="goal">Detecting current goal...</div>
+
+  <div class="progress-circle" id="progress">
+    <span id="timeLeftText">--:--</span>
+  </div>
+
+  <script>
+    const schedule = [
+      { start: "04:00", end: "05:45", task: "Study Session 1" },
+      { start: "06:00", end: "14:00", task: "School + Nap" },
+      { start: "14:00", end: "14:30", task: "Nap Time" },
+      { start: "14:30", end: "16:30", task: "Session 2" },
+      { start: "16:30", end: "17:00", task: "Lunch" },
+      { start: "17:00", end: "19:00", task: "Session 3" },
+      { start: "19:00", end: "19:30", task: "Dinner + Chill" },
+      { start: "19:30", end: "21:30", task: "Session 4" },
+      { start: "21:30", end: "22:45", task: "Session 5" }
+    ];
+
+    function toMinutes(timeStr) {
+      const [h, m] = timeStr.split(":").map(Number);
+      return h * 60 + m;
+    }
+
+    function update() {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const ist = new Date(utc + 5.5 * 60 * 60000);
+      const currentMinutes = ist.getHours() * 60 + ist.getMinutes();
+      const currentTimeStr = ist.toLocaleTimeString();
+
+      document.getElementById("clock").innerText = "IST: " + currentTimeStr;
+
+      let found = false;
+      for (let block of schedule) {
+        const startMin = toMinutes(block.start);
+        const endMin = toMinutes(block.end);
+
+        if (currentMinutes >= startMin && currentMinutes < endMin) {
+          found = true;
+
+          const total = endMin - startMin;
+          const elapsed = currentMinutes - startMin;
+          const deg = Math.round((elapsed / total) * 360);
+          const remMin = endMin - currentMinutes - 1;
+          const remSec = 59 - ist.getSeconds();
+          const displayTime = `${remMin.toString().padStart(2, '0')}:${remSec.toString().padStart(2, '0')}`;
+
+          document.getElementById("goal").innerText = block.task;
+          document.getElementById("timeLeftText").innerText = displayTime;
+          document.getElementById("progress").style.background =
+            `conic-gradient(#80ed99 ${deg}deg, #2d2d2d ${deg}deg)`;
+          break;
+        }
+      }
+
+      if (!found) {
+        document.getElementById("goal").innerText = "No active task — take a break 🌙";
+        document.getElementById("timeLeftText").innerText = "--:--";
+        document.getElementById("progress").style.background =
+          `conic-gradient(#444 0deg, #2d2d2d 360deg)`;
+      }
+    }
+
+    document.getElementById("fullscreen-btn").addEventListener("click", () => {
+      const doc = document.documentElement;
+      if (!document.fullscreenElement) {
+        doc.requestFullscreen().catch(err => alert("Error: " + err));
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    setInterval(update, 1000);
+    update();
+  </script>
+</body>
+</html>
